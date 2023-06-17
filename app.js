@@ -3,7 +3,8 @@ const express = require('express');
 const app = express();
 const ejs = require("ejs");
 const mongoose = require('mongoose');
-var SHA256 = require("crypto-js/sha256");
+var bcrypt = require('bcryptjs');
+var salt = bcrypt.genSaltSync(10);
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -34,7 +35,7 @@ app.get("/register", (req, res) => {
 app.post('/register', async (req, res) => {
     const newUser = new User({
         email: req.body.username,
-        password: SHA256(req.body.password).toString()
+        password: bcrypt.hashSync(req.body.password, salt)
     });
 
     await newUser.save().then((user) => {
@@ -48,7 +49,7 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) =>
     await User.findOne({ email: req.body.username }).then((foundUser) => {
         if (foundUser) {
-            if (foundUser.password === SHA256(req.body.password).toString()) {
+            if (bcrypt.compareSync(req.body.password, foundUser.password)) {
                 res.render('secrets');
             } else
                 res.send('not correct password');
